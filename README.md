@@ -1,0 +1,2 @@
+# mago
+MArkup in GO
