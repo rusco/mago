@@ -14,16 +14,16 @@ type mago struct {
 	depth   int
 }
 
-func Maco() *mago {
+func Mago() *mago {
 	return &mago{"", nil, "", make(map[string]string), 0}
 }
 
-func MacoInner(tagname string, parent *mago) *mago {
+func MagoInner(tagname string, parent *mago) *mago {
 	return &mago{tagname, parent, "", make(map[string]string), parent.depth + 1}
 }
 
 func (m *mago) Tag(content string) *mago {
-	return MacoInner(content, m)
+	return MagoInner(content, m)
 }
 
 func (m *mago) End() *mago {
@@ -72,7 +72,7 @@ func (m *mago) String() string {
 func (m *mago) Code(markup string) string {
 
 	var code bytes.Buffer
-	code.WriteString(`m := mago.Maco()`)
+	code.WriteString(`m := mago.Mago()`)
 
 	r := (strings.NewReader(markup))
 	d := html.NewTokenizer(r)
@@ -87,14 +87,14 @@ func (m *mago) Code(markup string) string {
 		switch tokenType {
 		case html.StartTagToken: // <tag>
 
-			code.WriteString(`.Tag("` + token.Data + `")"`)
+			code.WriteString(`.Tag("` + token.Data + `")`)
 			for _, v := range token.Attr {
-				code.WriteString(`.Att("` + v.Key + `,` + v.Val + `)`)
+				code.WriteString(`.Att("` + v.Key + `","` + v.Val + `")`)
 			}
 
 		case html.TextToken: // text between start and end tag
 
-			code.WriteString(`.Text(` + token.Data + `")"`)
+			code.WriteString(`.Text("` + token.Data + `")`)
 
 		case html.EndTagToken: // </tag>
 
@@ -102,9 +102,9 @@ func (m *mago) Code(markup string) string {
 
 		case html.SelfClosingTagToken: // <tag/>
 
-			code.WriteString(`.Tag("` + token.Data + `")"`)
+			code.WriteString(`.Tag("` + token.Data + `")`)
 			for _, v := range token.Attr {
-				code.WriteString(`.Att("` + v.Key + `,` + v.Val + `")"`)
+				code.WriteString(`.Att("` + v.Key + `","` + v.Val + `")`)
 			}
 			code.WriteString(`.End()`)
 
