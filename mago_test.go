@@ -7,7 +7,7 @@ import (
 
 func Test01(t *testing.T) {
 
-	t01 := Maco().Tag("a").Text("x").Tag("b").Text("y").End().Text("c").End().String()
+	t01 := Mago().Tag("a").Text("x").Tag("b").Text("y").End().Text("c").End().String()
 	got, expected := t01, `<a>x<b>y</b>c</a>`
 	if expected != got {
 		t.Errorf("expected Test01: \n%v, got: \n%v.", expected, got)
@@ -16,7 +16,7 @@ func Test01(t *testing.T) {
 
 func Test02(t *testing.T) {
 
-	got := Maco().Tag("parent").Att("parentproperty1", "true").Att("parentproperty2", "5").Tag("child1").Att("childproperty1", "c").Text("childbody").End().Tag("child2").Att("childproperty2", "c").Text("childbody").End().End().Tag("script").Text("$.scriptbody();").End().String()
+	got := Mago().Tag("parent").Att("parentproperty1", "true").Att("parentproperty2", "5").Tag("child1").Att("childproperty1", "c").Text("childbody").End().Tag("child2").Att("childproperty2", "c").Text("childbody").End().End().Tag("script").Text("$.scriptbody();").End().String()
 	expected := `<parent parentproperty1="true" parentproperty2="5"><child1 childproperty1="c">childbody</child1><child2 childproperty2="c">childbody</child2></parent><script>$.scriptbody();</script>`
 
 	if expected != got {
@@ -26,7 +26,7 @@ func Test02(t *testing.T) {
 
 func Test03(t *testing.T) {
 
-	got := Maco().Tag("parent").Att("parentproperty1", "true").Att("parentproperty2", "5").Tag("child1").Att("childproperty1", "c").Text("childbody").End().Tag("child2").Att("childproperty2", "c").Text("childbody").End().End().Tag("script").Text("$.scriptbody();")
+	got := Mago().Tag("parent").Att("parentproperty1", "true").Att("parentproperty2", "5").Tag("child1").Att("childproperty1", "c").Text("childbody").End().Tag("child2").Att("childproperty2", "c").Text("childbody").End().End().Tag("script").Text("$.scriptbody();")
 	got = got.End()
 	expected := `<parent parentproperty1="true" parentproperty2="5"><child1 childproperty1="c">childbody</child1><child2 childproperty2="c">childbody</child2></parent><script>$.scriptbody();</script>`
 
@@ -37,7 +37,7 @@ func Test03(t *testing.T) {
 
 func Test04(t *testing.T) {
 
-	m := Maco().Tag("root").Tag("numbers")
+	m := Mago().Tag("root").Tag("numbers")
 	for i := 1; i < 4; i++ {
 		m = m.Tag("number").Att("class", "x"+fmt.Sprintf("%d", i)).Text("sometext").End()
 	}
@@ -53,7 +53,7 @@ func Test04(t *testing.T) {
 
 func Test05(t *testing.T) {
 
-	got, expected := Maco().Tag("a").Text("x").Tag("br").End().Text("y").End().Text("c").String(), `<a>x<br/>y</a>c`
+	got, expected := Mago().Tag("a").Text("x").Tag("br").End().Text("y").End().Text("c").String(), `<a>x<br/>y</a>c`
 	if expected != got {
 		t.Errorf("expected Test05: \n%v, got: \n%v.", expected, got)
 	}
@@ -61,7 +61,7 @@ func Test05(t *testing.T) {
 
 func Test06(t *testing.T) {
 
-	got, expected := Maco().Tag("a").End().String(), `<a/>`
+	got, expected := Mago().Tag("a").End().String(), `<a/>`
 
 	if expected != got {
 		t.Errorf("expected Test06: \n%v, got: \n%v.", expected, got)
@@ -70,10 +70,11 @@ func Test06(t *testing.T) {
 
 func Test07(t *testing.T) {
 
-	input, output := `<a>x<br/>y</a>c`, Maco().Tag("a").Text("x").Tag("br").End().Text("y").End().Text("c").String()
+	input, output := `<a id="myid">x<br/>y</a>c`, Mago().Tag("a").Text("x").Tag("br").End().Text("y").End().Text("c").String()
 	//continue here
 
-	//got := Maco().Code(input)
+	got := Mago().Code(input)
+	println("got: ", got)
 	_, _ = input, output
 }
 
@@ -82,7 +83,7 @@ func Test08(t *testing.T) {
 	table := `<table style="width:100%"><tr><td>h1</td><td>h2</td><td>h3</td></tr><tr><td>line1, col1</td><td>line1, col2</td><td>line1, col3</td></tr></table>`
 	_ = table
 
-	m := Maco().Tag("table").Att("style", "width:100%")
+	m := Mago().Tag("table").Att("style", "width:100%")
 	for row := 0; row < 10; row++ {
 		m = m.Tag("tr")
 		for col := 0; col < 10; col++ {
@@ -98,5 +99,6 @@ func Test08(t *testing.T) {
 }
 
 func todo() {
+	//put in README.md:
 	println("readme: tested with go[pherjs], better tests structure: input array for all tests (round robin), html table example, xml doc example, empty attibutes, indent, xss,tool html2mago (evtl. go generate)")
 }
