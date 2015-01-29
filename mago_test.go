@@ -100,5 +100,11 @@ func Test08(t *testing.T) {
 
 func todo() {
 	//put in README.md:
-	println("readme: tested with go[pherjs], better tests structure: input array for all tests (round robin), html table example, xml doc example, empty attibutes, indent, xss,tool html2mago (evtl. go generate)")
+	_ = 	`tests with gopherjs
+		better test setup
+		round robin tests
+		empty attibutes
+		indent
+		xss
+		tool: html page for code generation`
 }
