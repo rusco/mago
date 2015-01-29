@@ -107,5 +107,6 @@ func todo() {
 		indent
 		xss
 		tool: html page for code generation
+		predefine html5 tags as const 
 		examples`
 }
