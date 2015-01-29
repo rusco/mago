@@ -106,5 +106,6 @@ func todo() {
 		empty attibutes
 		indent
 		xss
-		tool: html page for code generation`
+		tool: html page for code generation
+		examples`
 }
