@@ -17,10 +17,11 @@ func Test01(t *testing.T) {
 func Test02(t *testing.T) {
 
 	got := Mago().Tag("parent").Att("parentproperty1", "true").Att("parentproperty2", "5").Tag("child1").Att("childproperty1", "c").Text("childbody").End().Tag("child2").Att("childproperty2", "c").Text("childbody").End().End().Tag("script").Text("$.scriptbody();").End().String()
-	expected := `<parent parentproperty1="true" parentproperty2="5"><child1 childproperty1="c">childbody</child1><child2 childproperty2="c">childbody</child2></parent><script>$.scriptbody();</script>`
+	expected1 := `<parent parentproperty1="true" parentproperty2="5"><child1 childproperty1="c">childbody</child1><child2 childproperty2="c">childbody</child2></parent><script>$.scriptbody();</script>`
+	expected2 := `<parent parentproperty2="5" parentproperty1="true"><child1 childproperty1="c">childbody</child1><child2 childproperty2="c">childbody</child2></parent><script>$.scriptbody();</script>`
 
-	if expected != got {
-		t.Errorf("expected Test02: \n%v, got: \n%v.", expected, got)
+	if expected1 != got && expected2 != got {
+		t.Errorf("expected Test02: \n%v, or \n%v, but got: \n%v.", expected1, expected2, got)
 	}
 }
 
@@ -28,10 +29,12 @@ func Test03(t *testing.T) {
 
 	got := Mago().Tag("parent").Att("parentproperty1", "true").Att("parentproperty2", "5").Tag("child1").Att("childproperty1", "c").Text("childbody").End().Tag("child2").Att("childproperty2", "c").Text("childbody").End().End().Tag("script").Text("$.scriptbody();")
 	got = got.End()
-	expected := `<parent parentproperty1="true" parentproperty2="5"><child1 childproperty1="c">childbody</child1><child2 childproperty2="c">childbody</child2></parent><script>$.scriptbody();</script>`
+	gotStr := got.String()
+	expected1 := `<parent parentproperty1="true" parentproperty2="5"><child1 childproperty1="c">childbody</child1><child2 childproperty2="c">childbody</child2></parent><script>$.scriptbody();</script>`
+	expected2 := `<parent parentproperty2="5" parentproperty1="true"><child1 childproperty1="c">childbody</child1><child2 childproperty2="c">childbody</child2></parent><script>$.scriptbody();</script>`
 
-	if expected != got.String() {
-		t.Errorf("expected Test03: \n%v, got: \n%v.", expected, got)
+	if expected1 != gotStr && expected2 != gotStr {
+		t.Errorf("expected Test03: \n%v, or \n%v, but got: \n%v.", expected1, expected2, got)
 	}
 }
 
@@ -53,7 +56,7 @@ func Test04(t *testing.T) {
 
 func Test05(t *testing.T) {
 
-	got, expected := Mago().Tag("a").Text("x").Tag("br").End().Text("y").End().Text("c").String(), `<a>x<br/>y</a>c`
+	got, expected := Mago().Tag(A).Text("x").Tag(BR).End().Text("y").End().Text("c").String(), `<a>x<br/>y</a>c`
 	if expected != got {
 		t.Errorf("expected Test05: \n%v, got: \n%v.", expected, got)
 	}
@@ -70,24 +73,38 @@ func Test06(t *testing.T) {
 
 func Test07(t *testing.T) {
 
-	input, output := `<a id="myid">x<br/>y</a>c`, Mago().Tag("a").Text("x").Tag("br").End().Text("y").End().Text("c").String()
-	//continue here
+	input, output := `<a id="myid">x<br/>y</a>c`, Mago().Tag(A).Text("x").Tag(BR).End().Text("y").End().Text("c").String()
 
+	//continue here
 	got := Mago().Code(input)
-	println("got: ", got)
-	_, _ = input, output
+	_, _, _ = input, output, got
 }
 
 func Test08(t *testing.T) {
 
+	m := Mago().Tag("root").Tag("numbers")
+	for i := 1; i < 4; i++ {
+		m = m.Tag("number").Att("class", "x"+fmt.Sprintf("%d", i)).Text("sometext").End()
+	}
+	m = m.End().End()
+
+	got := m.String()
+	expected := `<root><numbers><number class="x1">sometext</number><number class="x2">sometext</number><number class="x3">sometext</number></numbers></root>`
+	if expected != got {
+		t.Errorf("expected Test08: \n%v, got: \n%v.", expected, got)
+	}
+}
+
+func Test09(t *testing.T) {
+
 	table := `<table style="width:100%"><tr><td>h1</td><td>h2</td><td>h3</td></tr><tr><td>line1, col1</td><td>line1, col2</td><td>line1, col3</td></tr></table>`
 	_ = table
 
-	m := Mago().Tag("table").Att("style", "width:100%")
+	m := Mago().Tag(TABLE).Att(STYLE, "width:100%")
 	for row := 0; row < 10; row++ {
-		m = m.Tag("tr")
+		m = m.Tag(TR)
 		for col := 0; col < 10; col++ {
-			m = m.Tag("td").Text(fmt.Sprintf("R=%d, C=%d", row, col)).End()
+			m = m.Tag(TD).Text(fmt.Sprintf("R=%d, C=%d", row, col)).End()
 		}
 		m = m.End()
 	}
@@ -100,13 +117,12 @@ func Test08(t *testing.T) {
 
 func todo() {
 	//put in README.md:
-	_ = 	`tests with gopherjs
+	_ = `tests with gopherjs
 		better test setup
 		round robin tests
 		empty attibutes
+		parsing of html comments
 		indent
 		xss
-		tool: html page for code generation
-		predefine html5 tags as const 
-		examples`
+		tool: html page for code generation`
 }
