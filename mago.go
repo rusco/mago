@@ -136,14 +136,24 @@ const ( //attributes
 	TABINDEX        = "tabindex"
 	VALIGN          = "valign"
 	WIDTH           = "width"
+	ASYNC           = "async"
+	SRC             = "src"
 )
 
-const TAGSATTR = `,a,abbr,address,area,article,aside,audio,base,bdo,bgsound,blink,blockquote,body,br,button,canvas,caption,col,colgroup,command,comment,datalist` +
-	`,dd,del,details,div,dl,dt,embed,fieldset,figure,b,i,small,footer,form,head,header,hgroup,h1 ,h2,h3,h4,h5,h6,hr,html,iframe,ilayer,img,input,ins,keygen` +
-	`,label,layer,legend,li,link,map,mark,marquee,meta,meter,multicol,nav,nobr,noembed,noscript,object,ol,optgroup,option,output,p,param,` +
-	`cite,code,dfn,em,kbd,samp,strong,var,pre,progress,ruby,q,script,section,select,spacer,span,style,sub,sup` +
-	`,table,tbody,td,textarea,tfoot,th,thead,time,title,tr,ul,video,wbr` +
-	`,accesskey,align,background,bgcolor,class,contenteditable,contextmenu,draggable,height,hidden,id,item,itemprop,spellcheck,subject,tabindex,valign,width,`
+const TAGSATTR = `,a,abbr,address,area,article,aside,audio,` +
+	`base,bdo,bgsound,blink,blockquote,body,br,button,` +
+	`canvas,caption,col,colgroup,command,comment,` +
+	`datalist,dd,del,details,div,dl,dt,` +
+	`embed,fieldset,figure,b,i,small,footer,form,head,header,hgroup,` +
+	`h1,h2,h3,h4,h5,h6,hr,html,iframe,ilayer,img,input,ins,keygen,` +
+	`label,layer,legend,li,link,map,mark,marquee,meta,meter,multicol,` +
+	`nav,nobr,noembed,noscript,object,ol,optgroup,option,output,p,param,` +
+	`cite,code,dfn,em,kbd,samp,strong,var,pre,progress,ruby,q,` +
+	`script,section,select,spacer,span,style,sub,sup,` +
+	`table,tbody,td,textarea,tfoot,th,thead,time,title,tr,ul,video,wbr,` +
+	`accesskey,align,background,bgcolor,class,contenteditable,contextmenu,` +
+	`draggable,height,hidden,id,item,itemprop,spellcheck,subject,` +
+	`tabindex,valign,width,async,src,`
 
 type mago struct {
 	tagname string
@@ -155,6 +165,10 @@ type mago struct {
 
 func Mago() *mago {
 	return &mago{"", nil, "", make(map[string]string), 0}
+}
+
+func MagoText(text string) *mago {
+	return &mago{"", nil, text, make(map[string]string), 0}
 }
 
 func magoChild(tagname string, parent *mago) *mago {
@@ -175,13 +189,17 @@ func (m *mago) Text(content string) *mago {
 	return m
 }
 
+func (m *mago) Exec(fn func(mx *mago) *mago) *mago {
+	m.body += fn(Mago()).String()
+	return m
+}
+
 func (m *mago) Att(name, value string) *mago {
 	m.attribs[name] = value
 	return m
 }
 
 func (m *mago) String() string {
-
 	var b bytes.Buffer
 	if len(m.tagname) != 0 {
 		b.WriteString(`<` + m.tagname)
@@ -202,7 +220,11 @@ func (m *mago) String() string {
 			b.WriteString(`</` + m.tagname + `>`)
 		}
 	} else if len(m.tagname) != 0 {
-		b.WriteString(`/>`)
+		if m.tagname == SCRIPT {
+			b.WriteString(`></string>`)
+		} else {
+			b.WriteString(`/>`)
+		}
 	}
 	return b.String()
 }
@@ -212,7 +234,7 @@ func (m *mago) Code(markup string) string {
 	var code bytes.Buffer
 	code.WriteString(`m := mago.Mago()`)
 
-	r := (strings.NewReader(markup))
+	r := strings.NewReader(markup)
 	d := html.NewTokenizer(r)
 
 	for {
@@ -268,4 +290,49 @@ func (m *mago) Code(markup string) string {
 	}
 	code.WriteString(`.String()`)
 	return code.String()
+}
+
+func (m *mago) Indent() string {
+
+	markup := m.String()
+	r := strings.NewReader(markup)
+	d := html.NewTokenizer(r)
+	prevToken := html.CommentToken
+
+	retStr, depth := "", 0
+
+	for {
+		tt := d.Next()
+		tokenString := string(d.Raw())
+
+		if tt == html.TextToken {
+			strippedNewlines := strings.Trim(tokenString, "\n")
+			if len(strippedNewlines) == 0 {
+				continue
+			}
+		}
+
+		if tt == html.EndTagToken {
+			depth -= 1
+		}
+
+		if tt != html.TextToken {
+			if prevToken != html.TextToken {
+				retStr += "\n"
+				for i := 0; i < depth; i++ {
+					retStr += "    "
+				}
+			}
+		}
+
+		retStr += tokenString
+
+		if tt == html.ErrorToken {
+			break //last token
+		} else if tt == html.StartTagToken {
+			depth += 1
+		}
+		prevToken = tt
+	}
+	return strings.Trim(retStr, "\n")
 }

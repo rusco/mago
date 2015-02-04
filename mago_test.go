@@ -73,11 +73,18 @@ func Test06(t *testing.T) {
 
 func Test07(t *testing.T) {
 
-	input, output := `<a id="myid">x<br/>y</a>c`, Mago().Tag(A).Text("x").Tag(BR).End().Text("y").End().Text("c").String()
+	input := `<a id="myid">x<br/>y</a>c`
+	expected := `m := mago.Mago().Tag(A).Att(ID,"myid").Text("x").Tag(BR).End().Text("y").End().Text("c").String()`
 
-	//continue here
 	got := Mago().Code(input)
-	_, _, _ = input, output, got
+	if expected != got {
+		t.Errorf("expected Test07 (Code generation): \n%v, got: \n%v.", expected, got)
+	}
+
+	roundrobin := Mago().Tag(A).Att(ID, "myid").Text("x").Tag(BR).End().Text("y").End().Text("c").String()
+	if roundrobin != input {
+		t.Errorf("expected Test07 (Code generation roundrobin): \n%v, input: \n%v.", roundrobin, input)
+	}
 }
 
 func Test08(t *testing.T) {
@@ -97,32 +104,101 @@ func Test08(t *testing.T) {
 
 func Test09(t *testing.T) {
 
-	table := `<table style="width:100%"><tr><td>h1</td><td>h2</td><td>h3</td></tr><tr><td>line1, col1</td><td>line1, col2</td><td>line1, col3</td></tr></table>`
-	_ = table
+	expected := `<table style="width:100%"><tr><td>row0,col0</td><td>row0,col1</td></tr><tr><td>row1,col0</td><td>row1,col1</td></tr></table>`
 
 	m := Mago().Tag(TABLE).Att(STYLE, "width:100%")
-	for row := 0; row < 10; row++ {
+	for row := 0; row < 2; row++ {
 		m = m.Tag(TR)
-		for col := 0; col < 10; col++ {
-			m = m.Tag(TD).Text(fmt.Sprintf("R=%d, C=%d", row, col)).End()
+		for col := 0; col < 2; col++ {
+			m = m.Tag(TD).Text(fmt.Sprintf("row%d,col%d", row, col)).End()
 		}
 		m = m.End()
 	}
-	mstr := m.End().String()
-	_ = mstr
+	got := m.End().String()
 
-	//continue here ...
+	if expected != got {
+		t.Errorf("expected Test09 (Table): \n%v, got: \n%v.", expected, got)
+	}
+}
+
+func Test10(t *testing.T) {
+
+	start, end := 1, 5
+
+	got := Mago().Tag("root").Tag("numbers").Exec(
+		func(mx *mago) *mago {
+			for i := start; i < end; i++ {
+				mx = mx.Tag("number").Att("class", "x"+fmt.Sprintf("%d", i)).Text("sometext").End()
+			}
+			return mx
+		}).End().End()
+
+	expected := `<root><numbers><number class="x1">sometext</number><number class="x2">sometext</number><number class="x3">sometext</number><number class="x4">sometext</number></numbers></root>`
+	if expected != got.String() {
+		t.Errorf("expected Test10 (Exec): \n%v, got: \n%v.", expected, got.String())
+	}
+}
+
+func Test11(t *testing.T) {
+
+	start, end := 1, 5
+	got := Mago().Tag("root").Tag("numbers").Exec(func(mx *mago) *mago {
+		for i := start; i < end; i++ {
+			mx = mx.Tag("number").Att("class", "x"+fmt.Sprintf("%d", i)).Text("sometext").End()
+		}
+		return mx
+	}).End().End().Indent()
+
+	expected := "<root>\n    <numbers>\n        <number class=\"x1\">sometext</number>\n        <number class=\"x2\">sometext</number>\n        <number class=\"x3\">sometext</number>\n        <number class=\"x4\">sometext</number>\n    </numbers>\n</root>"
+	if expected != got {
+		t.Errorf("expected Test11 (Indent): \n%v, got: \n%v.", expected, got)
+	}
+}
+
+func Test12(t *testing.T) {
+
+	expected := `<table style="width:100%"><tr><td>row_0,col_0</td><td>row_0,col_1</td></tr><tr><td>row_1,col_0</td><td>row_1,col_1</td></tr></table>`
+
+	got := Mago().Tag("table").Att("style", "width:100%").Exec(func(mx *mago) *mago {
+		for row := 0; row < 2; row++ {
+			mx = mx.Tag(TR).Exec(func(my *mago) *mago {
+				for col := 0; col < 2; col++ {
+					my = my.Tag(TD).Text(fmt.Sprintf("row_%d,col_%d", row, col)).End()
+				}
+				return my
+			}).End()
+		}
+		return mx
+	}).End().String()
+
+	if expected != got {
+		t.Errorf("expected Test12 (Table generation with 2 levels of Exec - bad idea !): \n%v, got: \n%v.", expected, got)
+	}
+}
+
+func Test13(t *testing.T) {
+
+	got := MagoText("<!DOCTYPE html>").
+		Tag(HTML).
+		Tag(SCRIPT).Att(SRC, "jquery.js").Text("").End().
+		Tag(P).Att(ID, "2").End().
+		End().String()
+	expected := `<!DOCTYPE html><html><script src="jquery.js"></string><p id="2"/></html>`
+
+	if expected != got {
+		t.Errorf("expected Test13 (DOCTYPE and SCRIPT tag ): \n%v, got: \n%v.", expected, got)
+	}
 
 }
 
 func todo() {
 	//put in README.md:
-	_ = `tests with gopherjs
-		better test setup
-		round robin tests
-		empty attibutes
-		parsing of html comments
-		indent
-		xss
-		tool: html page for code generation`
+	_ = `tests with gopherjs ?
+		.Range() function ?
+		use stack internally ?
+		empty attibutes ?
+		html comments ?
+		xss ?
+		symbol ?
+		html page?`
 }
