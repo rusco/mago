@@ -87,7 +87,7 @@ func main() {
 MAGO Code Generation support for easy development of templates:
 ```go
 input := `<a id="myid">x<br/>y</a>c`
-got := Mago().Code(input)
+got := Ma().Code(input)
 println(got)
 ```
 
