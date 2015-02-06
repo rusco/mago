@@ -10,7 +10,7 @@ You write your servercode in [Go](http://www.golang.org), you write your clientc
 
 * strongly typed templates
 * natural embedding of markup in your binary
-* use go and go fmt everywhere
+* use go, go fmt and go test in your view layer
 
 
 ***
@@ -28,14 +28,58 @@ To create this:
 
 You have to write this:
 ```go
-m := Mago().Tag("root").Tag("numbers")
+m := Ma().Tag("root").Tag("numbers")
 for i := 1; i < 4; i++ {
-	m = m.Tag("number").Att("class", "x"+fmt.Sprintf("%d", i)).Text("sometext").End()
+	m.Tag("number").Att("class", "x"+fmt.Sprintf("%d", i)).Text("sometext").End()
 }
 m = m.End().End()
 
 println(m.String()
 ```
+
+Complete Example:
+
+To create this:
+```xml
+<table style="width:100%">
+    <tr>
+        <td>row_0,col_0</td>
+        <td>row_0,col_1</td>
+        <td>row_0,col_2</td>
+        <td>row_0,col_3</td>
+    </tr>
+    <tr>
+        <td>row_1,col_0</td>
+        <td>row_1,col_1</td>
+        <td>row_1,col_2</td>
+        <td>row_1,col_3</td>
+    </tr>
+</table>
+```
+
+Your code would look like this:
+```go
+package main
+
+import (
+	"fmt"
+	m "github.com/rusco/mago"
+)
+
+func main() {
+	table := m.Ma(m.CONF_INDENT).Tag(m.TABLE).Att(m.STYLE, "width:100%").Go(func(mx *m.Mago) {
+		for row := 0; row < 2; row++ {
+			mx.Tag(m.TR).Go(func(my *m.Mago) {
+				for col := 0; col < 4; col++ {
+					my.Tag(m.TD).Text(fmt.Sprintf("row_%d,col_%d", row, col)).End()
+				}
+			}).End()
+		}
+	}).End()
+	fmt.Printf("%s", table.String())
+}
+```
+
 
 
 ***
@@ -49,7 +93,7 @@ println(got)
 
 outputs the string:
 ```go
-m := mago.Mago().Tag("a").Att("id","myid").Text("x").Tag("br").End().Text("y").End().Text("c").String()
+m := mago.Ma().Tag("a").Att("id","myid").Text("x").Tag("br").End().Text("y").End().Text("c").String()
 ```
 
 -api still undergoing changes, use on your own risk !

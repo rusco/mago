@@ -1,12 +1,13 @@
 package mago
 
-import (
-	"bytes"
-	"golang.org/x/net/html"
-	"strings"
+import "github.com/rusco/mago/tree"
+
+const (
+	CONF_INDENT = "_config_indent__true________"
+	CONF_EMPTY  = "_config_boolean_attribute___"
 )
 
-const ( //tags
+const ( //common html5 tags
 	A          = "a"
 	ABBR       = "abbr"
 	ADDRESS    = "address"
@@ -28,6 +29,7 @@ const ( //tags
 	COLGROUP   = "colgroup"
 	COMMAND    = "command"
 	COMMENT    = "comment"
+	DOCTYPE    = "<!DOCTYPE html>"
 	DATALIST   = "datalist"
 	DD         = "dd"
 	DEL        = "del"
@@ -117,7 +119,7 @@ const ( //tags
 	WBR        = "wbr"
 )
 
-const ( //attributes
+const ( //common attributes
 	ACCESSKEY       = "accesskey"
 	ALIGN           = "align"
 	BACKGROUND      = "background"
@@ -140,199 +142,96 @@ const ( //attributes
 	SRC             = "src"
 )
 
-const TAGSATTR = `,a,abbr,address,area,article,aside,audio,` +
-	`base,bdo,bgsound,blink,blockquote,body,br,button,` +
-	`canvas,caption,col,colgroup,command,comment,` +
-	`datalist,dd,del,details,div,dl,dt,` +
-	`embed,fieldset,figure,b,i,small,footer,form,head,header,hgroup,` +
-	`h1,h2,h3,h4,h5,h6,hr,html,iframe,ilayer,img,input,ins,keygen,` +
-	`label,layer,legend,li,link,map,mark,marquee,meta,meter,multicol,` +
-	`nav,nobr,noembed,noscript,object,ol,optgroup,option,output,p,param,` +
-	`cite,code,dfn,em,kbd,samp,strong,var,pre,progress,ruby,q,` +
-	`script,section,select,spacer,span,style,sub,sup,` +
-	`table,tbody,td,textarea,tfoot,th,thead,time,title,tr,ul,video,wbr,` +
-	`accesskey,align,background,bgcolor,class,contenteditable,contextmenu,` +
-	`draggable,height,hidden,id,item,itemprop,spellcheck,subject,` +
-	`tabindex,valign,width,async,src,`
-
-type mago struct {
-	tagname string
-	parent  *mago
-	body    string
-	attribs map[string]string
-	depth   int
+type magoCmd struct {
+	command string
+	args    []interface{}
 }
 
-func Mago() *mago {
-	return &mago{"", nil, "", make(map[string]string), 0}
+type Mago struct {
+	indent bool
+	list   []magoCmd
 }
 
-func MagoText(text string) *mago {
-	return &mago{"", nil, text, make(map[string]string), 0}
-}
+func Ma(txt ...string) *Mago {
 
-func magoChild(tagname string, parent *mago) *mago {
-	return &mago{tagname, parent, "", make(map[string]string), parent.depth + 1}
-}
+	list := make([]magoCmd, 0)
 
-func (m *mago) Tag(content string) *mago {
-	return magoChild(content, m)
-}
-
-func (m *mago) End() *mago {
-	m.parent.Text(m.String())
-	return m.parent
-}
-
-func (m *mago) Text(content string) *mago {
-	m.body += content
-	return m
-}
-
-func (m *mago) Exec(fn func(mx *mago) *mago) *mago {
-	m.body += fn(Mago()).String()
-	return m
-}
-
-func (m *mago) Att(name, value string) *mago {
-	m.attribs[name] = value
-	return m
-}
-
-func (m *mago) String() string {
-	var b bytes.Buffer
-	if len(m.tagname) != 0 {
-		b.WriteString(`<` + m.tagname)
-	}
-
-	if len(m.attribs) > 0 {
-		for k, v := range m.attribs {
-			b.WriteString(` ` + k + `="` + v + `"`)
-		}
-	}
-
-	if len(m.body) > 0 {
-		if len(m.tagname) != 0 || len(m.attribs) > 0 {
-			b.WriteString(`>`)
-		}
-		b.WriteString(m.body)
-		if len(m.tagname) != 0 {
-			b.WriteString(`</` + m.tagname + `>`)
-		}
-	} else if len(m.tagname) != 0 {
-		if m.tagname == SCRIPT {
-			b.WriteString(`></string>`)
-		} else {
-			b.WriteString(`/>`)
-		}
-	}
-	return b.String()
-}
-
-func (m *mago) Code(markup string) string {
-
-	var code bytes.Buffer
-	code.WriteString(`m := mago.Mago()`)
-
-	r := strings.NewReader(markup)
-	d := html.NewTokenizer(r)
-
-	for {
-		tokenType := d.Next()
-		if tokenType == html.ErrorToken {
+	indent := false
+	for i, val := range txt {
+		if i == 2 {
 			break
 		}
-		token := d.Token()
-
-		switch tokenType {
-		case html.StartTagToken: // <tag>
-
-			if strings.Contains(TAGSATTR, ","+token.Data+",") {
-				code.WriteString(`.Tag(` + strings.ToUpper(token.Data) + `)`)
-			} else {
-				code.WriteString(`.Tag("` + token.Data + `")`)
-			}
-
-			for _, v := range token.Attr {
-
-				if strings.Contains(TAGSATTR, ","+v.Key+",") {
-					code.WriteString(`.Att(` + strings.ToUpper(v.Key) + `,"` + v.Val + `")`)
-				} else {
-					code.WriteString(`.Att("` + v.Key + `","` + v.Val + `")`)
-				}
-			}
-
-		case html.TextToken: // text between start and end tag
-
-			code.WriteString(`.Text("` + token.Data + `")`)
-
-		case html.EndTagToken: // </tag>
-
-			code.WriteString(`.End()`)
-
-		case html.SelfClosingTagToken: // <tag/>
-
-			if strings.Contains(TAGSATTR, ","+token.Data+",") {
-				code.WriteString(`.Tag(` + strings.ToUpper(token.Data) + `)`)
-			} else {
-				code.WriteString(`.Tag("` + token.Data + `")`)
-			}
-			for _, v := range token.Attr {
-
-				if strings.Contains(TAGSATTR, ","+v.Key+",") {
-					code.WriteString(`.Att(` + strings.ToUpper(v.Key) + `,"` + v.Val + `")`)
-				} else {
-					code.WriteString(`.Att("` + v.Key + `","` + v.Val + `")`)
-				}
-			}
-			code.WriteString(`.End()`)
+		if val == CONF_INDENT {
+			indent = true
+		}
+		if val != CONF_INDENT {
+			mc := magoCmd{"Text", []interface{}{val}}
+			list = append(list, mc)
 		}
 	}
-	code.WriteString(`.String()`)
-	return code.String()
+	return &Mago{indent, list}
 }
 
-func (m *mago) Indent() string {
+func (m *Mago) Tag(content string) *Mago {
+	mc := magoCmd{"Tag", []interface{}{content}}
+	m.list = append(m.list, mc)
 
-	markup := m.String()
-	r := strings.NewReader(markup)
-	d := html.NewTokenizer(r)
-	prevToken := html.CommentToken
+	return m
+}
 
-	retStr, depth := "", 0
+func (m *Mago) End() *Mago {
+	mc := magoCmd{"End", []interface{}{nil}}
+	m.list = append(m.list, mc)
 
-	for {
-		tt := d.Next()
-		tokenString := string(d.Raw())
+	return m
+}
 
-		if tt == html.TextToken {
-			strippedNewlines := strings.Trim(tokenString, "\n")
-			if len(strippedNewlines) == 0 {
-				continue
-			}
+func (m *Mago) Text(content string) *Mago {
+	mc := magoCmd{"Text", []interface{}{content}}
+	m.list = append(m.list, mc)
+
+	return m
+}
+
+func (m *Mago) Go(fn func(mx *Mago)) *Mago {
+	fn(m)
+	return m
+}
+
+func (m *Mago) Att(name, value string) *Mago {
+	mc := magoCmd{"Att", []interface{}{name, value}}
+	m.list = append(m.list, mc)
+	return m
+}
+
+func (m *Mago) Fmt(spacer string) *Mago {
+	return m
+}
+
+func (m *Mago) String() string {
+
+	mt := tree.NewMagoTree()
+	for _, cmd := range m.list {
+
+		switch cmd.command {
+		case "Tag":
+			mt = mt.MtTag(cmd.args[0].(string))
+		case "Att":
+			mt = mt.MtAtt(cmd.args[0].(string), cmd.args[1].(string))
+		case "End":
+			mt = mt.MtEnd()
+		case "Text":
+			mt = mt.MtText(cmd.args[0].(string))
 		}
-
-		if tt == html.EndTagToken {
-			depth -= 1
-		}
-
-		if tt != html.TextToken {
-			if prevToken != html.TextToken {
-				retStr += "\n"
-				for i := 0; i < depth; i++ {
-					retStr += "    "
-				}
-			}
-		}
-
-		retStr += tokenString
-
-		if tt == html.ErrorToken {
-			break //last token
-		} else if tt == html.StartTagToken {
-			depth += 1
-		}
-		prevToken = tt
 	}
-	return strings.Trim(retStr, "\n")
+	if m.indent {
+		return mt.Indent()
+	} else {
+		return mt.String()
+	}
+}
+
+func (m *Mago) Code(markup string) string {
+	mt := tree.NewMagoTree()
+	return mt.Code(markup)
 }
